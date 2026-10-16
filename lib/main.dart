@@ -10,6 +10,8 @@ const String supabasePublishableKey =
 final SupabaseClient supabase = Supabase.instance.client;
 
 const Color friendzaGreen = Color(0xFF16A085);
+const Color friendzaDarkGreen = Color(0xFF117A65);
+const Color friendzaBackground = Color(0xFFF3F6F8);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +37,13 @@ class FriendzaApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: friendzaGreen,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF7F9FC),
+        scaffoldBackgroundColor: friendzaBackground,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 0,
+          centerTitle: false,
+        ),
       ),
       home: const WelcomeScreen(),
     );
@@ -64,7 +72,12 @@ class WelcomeScreen extends StatelessWidget {
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: friendzaGreen,
+                    gradient: const LinearGradient(
+                      colors: [
+                        friendzaGreen,
+                        friendzaDarkGreen,
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: const Icon(
@@ -303,7 +316,8 @@ class _AccountScreenState extends State<AccountScreen> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
+                        if (value == null ||
+                            value.trim().isEmpty) {
                           return 'Enter your full name';
                         }
                         return null;
@@ -725,7 +739,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
               child: Text(
                 name.isEmpty ? '?' : name[0].toUpperCase(),
                 style: const TextStyle(
-                  color: Color(0xFF138D75),
+                  color: friendzaDarkGreen,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -779,6 +793,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   ScrollController();
 
   bool _sending = false;
+  bool _initialScrollDone = false;
+  bool _wasNearBottom = true;
 
   String get _userId => supabase.auth.currentUser!.id;
 
@@ -830,14 +846,42 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
-      }
+      if (!_scrollController.hasClients) return;
+
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
     });
+  }
+
+  bool _isNearBottom() {
+    if (!_scrollController.hasClients) return true;
+
+    final position = _scrollController.position;
+
+    return position.maxScrollExtent - position.pixels < 160;
+  }
+
+  String _formatMessageTime(dynamic value) {
+    if (value == null) return '';
+
+    final date = DateTime.tryParse(value.toString());
+
+    if (date == null) return '';
+
+    final localDate = date.toLocal();
+
+    final hour = localDate.hour % 12 == 0
+        ? 12
+        : localDate.hour % 12;
+
+    final minute = localDate.minute.toString().padLeft(2, '0');
+
+    final period = localDate.hour >= 12 ? 'PM' : 'AM';
+
+    return '$hour:$minute $period';
   }
 
   @override
@@ -850,7 +894,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFEFF3F5),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        titleSpacing: 0,
         title: Row(
           children: [
             CircleAvatar(
@@ -860,23 +908,51 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     ? '?'
                     : widget.friendName[0].toUpperCase(),
                 style: const TextStyle(
-                  color: Color(0xFF138D75),
+                  color: friendzaDarkGreen,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                widget.friendName,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.friendName,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Text(
+                    'Friendza conversation',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Conversation options',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'More conversation options will be added later.',
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.more_vert),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -889,7 +965,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 'conversation_id',
                 widget.conversationId,
               )
-                  .order('created_at'),
+                  .order('created_at', ascending: true),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   debugPrint(
@@ -949,65 +1025,133 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   );
                 }
 
+                // Scroll to the latest message when the chat first opens.
+                // On later updates, only auto-scroll if the user was already
+                // close to the bottom of the conversation.
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) _scrollToBottom();
+                  if (!mounted || !_scrollController.hasClients) {
+                    return;
+                  }
+
+                  if (!_initialScrollDone || _wasNearBottom) {
+                    _scrollController.jumpTo(
+                      _scrollController.position.maxScrollExtent,
+                    );
+                  }
+
+                  _initialScrollDone = true;
+                  _wasNearBottom = _isNearBottom();
                 });
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-
-                    final isMine =
-                        message['sender_id'].toString() == _userId;
-
-                    final content =
-                    (message['content'] ?? '').toString();
-
-                    return Align(
-                      alignment: isMine
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth:
-                          MediaQuery.of(context).size.width *
-                              0.78,
-                        ),
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isMine
-                              ? friendzaGreen
-                              : Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(18),
-                            topRight: const Radius.circular(18),
-                            bottomLeft: Radius.circular(
-                              isMine ? 18 : 4,
-                            ),
-                            bottomRight: Radius.circular(
-                              isMine ? 4 : 18,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          content,
-                          style: TextStyle(
-                            color: isMine
-                                ? Colors.white
-                                : Colors.black87,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    );
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification is ScrollUpdateNotification ||
+                        notification is ScrollEndNotification) {
+                      _wasNearBottom = _isNearBottom();
+                    }
+                    return false;
                   },
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(
+                      12,
+                      18,
+                      12,
+                      18,
+                    ),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+
+                      final isMine =
+                          message['sender_id'].toString() == _userId;
+
+                      final content =
+                      (message['content'] ?? '').toString();
+
+                      final time =
+                      _formatMessageTime(message['created_at']);
+
+                      return Align(
+                        alignment: isMine
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxWidth:
+                            MediaQuery.of(context).size.width * 0.78,
+                          ),
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.fromLTRB(
+                            13,
+                            10,
+                            10,
+                            7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isMine
+                                ? const Color(0xFFD9FDD3)
+                                : Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(17),
+                              topRight: const Radius.circular(17),
+                              bottomLeft: Radius.circular(
+                                isMine ? 17 : 4,
+                              ),
+                              bottomRight: Radius.circular(
+                                isMine ? 4 : 17,
+                              ),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(10),
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  content,
+                                  style: const TextStyle(
+                                    color: Color(0xFF202C33),
+                                    fontSize: 15,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    time,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                  if (isMine) ...[
+                                    const SizedBox(width: 4),
+                                    const Icon(
+                                      Icons.done_all,
+                                      size: 15,
+                                      color: Color(0xFF53A6A0),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -1021,8 +1165,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 12,
                 10,
               ),
-              color: Colors.white,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x10000000),
+                    blurRadius: 8,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
                     child: TextField(
@@ -1038,32 +1192,47 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         fillColor: const Color(0xFFF2F5F7),
                         contentPadding:
                         const EdgeInsets.symmetric(
-                          horizontal: 16,
+                          horizontal: 18,
                           vertical: 12,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(26),
                           borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide: const BorderSide(
+                            color: friendzaGreen,
+                            width: 1,
+                          ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _sending ? null : _sendMessage,
-                    icon: _sending
-                        ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+                  SizedBox(
+                    height: 48,
+                    width: 48,
+                    child: IconButton.filled(
+                      onPressed: _sending ? null : _sendMessage,
+                      icon: _sending
+                          ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                          : const Icon(Icons.send_rounded),
+                      style: IconButton.styleFrom(
+                        backgroundColor: friendzaGreen,
+                        foregroundColor: Colors.white,
                       ),
-                    )
-                        : const Icon(Icons.send_rounded),
-                    style: IconButton.styleFrom(
-                      backgroundColor: friendzaGreen,
-                      foregroundColor: Colors.white,
                     ),
                   ),
                 ],
@@ -1521,7 +1690,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 child: Text(
                   name.isEmpty ? '?' : name[0].toUpperCase(),
                   style: const TextStyle(
-                    color: Color(0xFF138D75),
+                    color: friendzaDarkGreen,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1679,7 +1848,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 child: Text(
                   name.isEmpty ? '?' : name[0].toUpperCase(),
                   style: const TextStyle(
-                    color: Color(0xFF138D75),
+                    color: friendzaDarkGreen,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1898,7 +2067,7 @@ class ProfileScreen extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF138D75),
+                  color: friendzaDarkGreen,
                 ),
               ),
             ),
