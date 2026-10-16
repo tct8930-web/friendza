@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+const String supabaseUrl =
+    'https://njjsqppwbphutahmfeor.supabase.co';
+
+const String supabasePublishableKey =
+    'sb_publishable_Q2b0pDWwqfWxCLGUDlA8QA_TAJXkbvA';
+
+final SupabaseClient supabase = Supabase.instance.client;
+
+const Color friendzaGreen = Color(0xFF16A085);
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: supabaseUrl,
+    publishableKey: supabasePublishableKey,
+  );
+
   runApp(const FriendzaApp());
 }
-
-const Color friendzaBlue = Color(0xFF3568F5);
-const Color friendzaBackground = Color(0xFFF6F8FC);
 
 class FriendzaApp extends StatelessWidget {
   const FriendzaApp({super.key});
@@ -13,33 +28,23 @@ class FriendzaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Friendza',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: friendzaBackground,
-        colorScheme: ColorScheme.fromSeed(seedColor: friendzaBlue),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: friendzaBlue, width: 1.5),
-          ),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: friendzaGreen,
         ),
+        scaffoldBackgroundColor: const Color(0xFFF7F9FC),
       ),
       home: const WelcomeScreen(),
     );
   }
 }
+
+// =====================================================
+// WELCOME SCREEN
+// =====================================================
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -47,125 +52,81 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(28),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: friendzaBlue,
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: const Icon(
-                      Icons.forum_rounded,
-                      color: Colors.white,
-                      size: 56,
-                    ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(28),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: friendzaGreen,
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Friendza',
-                    style: TextStyle(
-                      fontSize: 38,
-                      fontWeight: FontWeight.bold,
-                      color: friendzaBlue,
-                    ),
+                  child: const Icon(
+                    Icons.forum_rounded,
+                    color: Colors.white,
+                    size: 55,
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Your friends. Your conversations.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Friendza',
+                  style: TextStyle(
+                    fontSize: 38,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    'Stay close to the people who matter.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your friends. Your conversations.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black54,
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Connect with friends and share your moments '
-                        'in one place.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.6,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: FilledButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AccountScreen(
-                              createAccount: true,
-                            ),
+                ),
+                const SizedBox(height: 38),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AccountScreen(
+                            createAccount: false,
                           ),
-                        );
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: friendzaBlue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
                         ),
-                      ),
-                      child: const Text(
-                        'Create Account',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
+                      );
+                    },
+                    child: const Text('Log In'),
                   ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AccountScreen(
-                              createAccount: false,
-                            ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AccountScreen(
+                            createAccount: true,
                           ),
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: friendzaBlue,
-                        side: const BorderSide(color: friendzaBlue),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
                         ),
-                      ),
-                      child: const Text(
-                        'Log In',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
+                      );
+                    },
+                    child: const Text('Create Account'),
                   ),
-                  const SizedBox(height: 28),
-                  const Text(
-                    'Made for friendship.',
-                    style: TextStyle(color: Colors.black45),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -174,10 +135,17 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
+// =====================================================
+// LOGIN AND SIGNUP
+// =====================================================
+
 class AccountScreen extends StatefulWidget {
   final bool createAccount;
 
-  const AccountScreen({super.key, required this.createAccount});
+  const AccountScreen({
+    super.key,
+    required this.createAccount,
+  });
 
   @override
   State<AccountScreen> createState() => _AccountScreenState();
@@ -185,10 +153,103 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  bool _loading = false;
   bool _hidePassword = true;
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _loading = true);
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      if (widget.createAccount) {
+        final response = await supabase.auth.signUp(
+          email: email,
+          password: password,
+          data: {
+            'full_name': _nameController.text.trim(),
+          },
+        );
+
+        if (response.user == null) {
+          _showMessage(
+            'Account creation failed. Please try again.',
+          );
+          return;
+        }
+
+        if (response.session == null) {
+          _showMessage(
+            'Account created. Check your email to confirm your account, '
+                'then log in.',
+          );
+          return;
+        }
+
+        await _saveProfile(
+          response.user!.id,
+          _nameController.text.trim(),
+        );
+      } else {
+        final response = await supabase.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+
+        if (response.session == null) {
+          _showMessage('Login failed. Please try again.');
+          return;
+        }
+      }
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const FriendzaDashboard(),
+        ),
+            (route) => false,
+      );
+    } on AuthException catch (error) {
+      _showMessage(error.message);
+    } catch (error) {
+      debugPrint('Friendza login/signup error: $error');
+      _showMessage(
+        'Something went wrong. Check your connection and try again.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _saveProfile(String userId, String name) async {
+    try {
+      await supabase.from('profiles').upsert({
+        'id': userId,
+        'full_name': name,
+      });
+    } catch (error) {
+      debugPrint('Friendza profile error: $error');
+    }
+  }
 
   @override
   void dispose() {
@@ -200,84 +261,80 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final creating = widget.createAccount;
-
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: friendzaBackground,
-        title: const Text('Friendza'),
+        title: Text(
+          widget.createAccount ? 'Create Account' : 'Log In',
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
+            constraints: const BoxConstraints(maxWidth: 430),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const Icon(
+                    Icons.forum_rounded,
+                    size: 65,
+                    color: friendzaGreen,
+                  ),
+                  const SizedBox(height: 20),
                   Text(
-                    creating ? 'Create your account' : 'Welcome back!',
+                    widget.createAccount
+                        ? 'Join Friendza'
+                        : 'Welcome Back',
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    creating
-                        ? 'Join Friendza and connect with your friends.'
-                        : 'Log in to continue to Friendza.',
-                    style: const TextStyle(color: Colors.black54),
-                  ),
                   const SizedBox(height: 28),
-                  if (creating) ...[
-                    const Text('Your name'),
-                    const SizedBox(height: 8),
+                  if (widget.createAccount) ...[
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
-                        hintText: 'Enter your name',
+                        labelText: 'Full Name',
                         prefixIcon: Icon(Icons.person_outline),
+                        border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (creating &&
-                            (value == null || value.trim().isEmpty)) {
-                          return 'Please enter your name';
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Enter your full name';
                         }
                         return null;
                       },
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                   ],
-                  const Text('Email address'),
-                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
-                      hintText: 'you@example.com',
+                      labelText: 'Email Address',
                       prefixIcon: Icon(Icons.email_outlined),
+                      border: OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null ||
-                          !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                              .hasMatch(value.trim())) {
+                          !value.trim().contains('@')) {
                         return 'Enter a valid email address';
                       }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 18),
-                  const Text('Password'),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _hidePassword,
                     decoration: InputDecoration(
-                      hintText: 'At least 6 characters',
+                      labelText: 'Password',
                       prefixIcon: const Icon(Icons.lock_outline),
+                      border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         onPressed: () {
                           setState(() {
@@ -293,60 +350,1626 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.length < 6) {
-                        return 'Password must have at least 6 characters';
+                        return 'Password must contain at least 6 characters';
                       }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
                   SizedBox(
-                    height: 54,
+                    height: 52,
                     child: FilledButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'The account system is not connected yet.',
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: friendzaBlue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                      onPressed: _loading ? null : _submit,
+                      child: _loading
+                          ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
                         ),
+                      )
+                          : Text(
+                        widget.createAccount
+                            ? 'Create Account'
+                            : 'Log In',
                       ),
-                      child: Text(
-                        creating ? 'Create Account' : 'Log In',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AccountScreen(
-                            createAccount: !creating,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      creating
-                          ? 'Already have an account? Log in'
-                          : 'New to Friendza? Create an account',
                     ),
                   ),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// =====================================================
+// MAIN DASHBOARD
+// =====================================================
+
+class FriendzaDashboard extends StatefulWidget {
+  const FriendzaDashboard({super.key});
+
+  @override
+  State<FriendzaDashboard> createState() =>
+      _FriendzaDashboardState();
+}
+
+class _FriendzaDashboardState extends State<FriendzaDashboard> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = const [
+    ChatsScreen(),
+    FriendsScreen(),
+    StoriesScreen(),
+    ProfileScreen(),
+  ];
+
+  final List<String> _titles = const [
+    'Chats',
+    'Friends',
+    'Stories',
+    'Profile',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const Icon(
+              Icons.forum_rounded,
+              color: friendzaGreen,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Friendza',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Text(
+                _titles[_selectedIndex],
+                style: const TextStyle(
+                  color: Colors.black54,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() => _selectedIndex = index);
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            selectedIcon: Icon(Icons.chat_bubble),
+            label: 'Chats',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.people_outline),
+            selectedIcon: Icon(Icons.people),
+            label: 'Friends',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.auto_awesome_outlined),
+            selectedIcon: Icon(Icons.auto_awesome),
+            label: 'Stories',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =====================================================
+// CHATS LIST
+// =====================================================
+
+class ChatsScreen extends StatefulWidget {
+  const ChatsScreen({super.key});
+
+  @override
+  State<ChatsScreen> createState() => _ChatsScreenState();
+}
+
+class _ChatsScreenState extends State<ChatsScreen> {
+  bool _loading = true;
+  String? _error;
+
+  List<Map<String, dynamic>> _chats = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChats();
+  }
+
+  Future<void> _loadChats() async {
+    final userId = supabase.auth.currentUser?.id;
+
+    if (userId == null) {
+      if (!mounted) return;
+
+      setState(() {
+        _loading = false;
+        _error = 'Please log in again.';
+      });
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+
+    try {
+      final memberships = await supabase
+          .from('conversation_members')
+          .select('conversation_id')
+          .eq('user_id', userId);
+
+      final chats = <Map<String, dynamic>>[];
+
+      for (final membership in memberships) {
+        final conversationId =
+        membership['conversation_id'].toString();
+
+        final members = await supabase
+            .from('conversation_members')
+            .select('user_id')
+            .eq('conversation_id', conversationId);
+
+        final otherMembers = (members as List)
+            .cast<Map<String, dynamic>>()
+            .where(
+              (member) =>
+          member['user_id'].toString() != userId,
+        )
+            .toList();
+
+        if (otherMembers.isEmpty) continue;
+
+        final friendId =
+        otherMembers.first['user_id'].toString();
+
+        var friendName = 'Friend';
+
+        final profile = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', friendId)
+            .maybeSingle();
+
+        final profileName =
+        profile?['full_name']?.toString().trim();
+
+        if (profileName != null && profileName.isNotEmpty) {
+          friendName = profileName;
+        }
+
+        final latest = await supabase
+            .from('messages')
+            .select('content, created_at')
+            .eq('conversation_id', conversationId)
+            .order('created_at', ascending: false)
+            .limit(1);
+
+        final latestMessages = latest as List;
+
+        chats.add({
+          'conversation_id': conversationId,
+          'friend_id': friendId,
+          'friend_name': friendName,
+          'last_message': latestMessages.isEmpty
+              ? 'Start a conversation'
+              : (latestMessages.first['content'] ?? '').toString(),
+          'last_time': latestMessages.isEmpty
+              ? ''
+              : (latestMessages.first['created_at'] ?? '').toString(),
+        });
+      }
+
+      chats.sort(
+            (a, b) => b['last_time']
+            .toString()
+            .compareTo(a['last_time'].toString()),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _chats = chats;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      debugPrint('Friendza conversation error: $error');
+
+      setState(() {
+        _loading = false;
+        _error = 'Conversation error: $error';
+      });
+    }
+  }
+
+  void _openChat(Map<String, dynamic> chat) {
+    Navigator.of(context)
+        .push(
+      MaterialPageRoute(
+        builder: (_) => ChatRoomScreen(
+          conversationId:
+          chat['conversation_id'].toString(),
+          friendId: chat['friend_id'].toString(),
+          friendName: chat['friend_name'].toString(),
+        ),
+      ),
+    )
+        .then((_) => _loadChats());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.redAccent,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: _loadChats,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_chats.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 75,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Your conversations start here',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Open Friends, choose My Friends, and tap Message to start chatting.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.black54),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _loadChats,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Refresh'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadChats,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _chats.length,
+        separatorBuilder: (context, index) =>
+        const Divider(height: 1, indent: 76),
+        itemBuilder: (context, index) {
+          final chat = _chats[index];
+          final name = chat['friend_name'].toString();
+
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundColor: friendzaGreen.withAlpha(30),
+              child: Text(
+                name.isEmpty ? '?' : name[0].toUpperCase(),
+                style: const TextStyle(
+                  color: Color(0xFF138D75),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            title: Text(
+              name,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle: Text(
+              chat['last_message'].toString(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _openChat(chat),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// =====================================================
+// CHAT ROOM AND MESSAGING
+// =====================================================
+
+class ChatRoomScreen extends StatefulWidget {
+  final String conversationId;
+  final String friendId;
+  final String friendName;
+
+  const ChatRoomScreen({
+    super.key,
+    required this.conversationId,
+    required this.friendId,
+    required this.friendName,
+  });
+
+  @override
+  State<ChatRoomScreen> createState() =>
+      _ChatRoomScreenState();
+}
+
+class _ChatRoomScreenState extends State<ChatRoomScreen> {
+  final TextEditingController _messageController =
+  TextEditingController();
+
+  final ScrollController _scrollController =
+  ScrollController();
+
+  bool _sending = false;
+
+  String get _userId => supabase.auth.currentUser!.id;
+
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+
+    if (text.isEmpty || _sending) return;
+
+    setState(() => _sending = true);
+
+    try {
+      await supabase.from('messages').insert({
+        'conversation_id': widget.conversationId,
+        'sender_id': _userId,
+        'content': text,
+        'message_type': 'text',
+      });
+
+      _messageController.clear();
+      _scrollToBottom();
+    } on PostgrestException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Message could not be sent: ${error.message}',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      debugPrint('Friendza send message error: $error');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Message could not be sent. Please try again.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+      }
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: friendzaGreen.withAlpha(30),
+              child: Text(
+                widget.friendName.isEmpty
+                    ? '?'
+                    : widget.friendName[0].toUpperCase(),
+                style: const TextStyle(
+                  color: Color(0xFF138D75),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.friendName,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: supabase
+                  .from('messages')
+                  .stream(primaryKey: ['id'])
+                  .eq(
+                'conversation_id',
+                widget.conversationId,
+              )
+                  .order('created_at'),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  debugPrint(
+                    'Friendza message stream error: ${snapshot.error}',
+                  );
+
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'Could not load messages. Check the messages SELECT policy and Realtime settings.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
+
+                if (!snapshot.hasData) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                final messages = snapshot.data!;
+
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.waving_hand_outlined,
+                            size: 54,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Say hello to ${widget.friendName}!',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Your messages will appear here.',
+                            style: TextStyle(
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _scrollToBottom();
+                });
+
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index];
+
+                    final isMine =
+                        message['sender_id'].toString() == _userId;
+
+                    final content =
+                    (message['content'] ?? '').toString();
+
+                    return Align(
+                      alignment: isMine
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth:
+                          MediaQuery.of(context).size.width *
+                              0.78,
+                        ),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isMine
+                              ? friendzaGreen
+                              : Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(18),
+                            topRight: const Radius.circular(18),
+                            bottomLeft: Radius.circular(
+                              isMine ? 18 : 4,
+                            ),
+                            bottomRight: Radius.circular(
+                              isMine ? 4 : 18,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          content,
+                          style: TextStyle(
+                            color: isMine
+                                ? Colors.white
+                                : Colors.black87,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(
+                12,
+                10,
+                12,
+                10,
+              ),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      minLines: 1,
+                      maxLines: 5,
+                      textCapitalization:
+                      TextCapitalization.sentences,
+                      onSubmitted: (_) => _sendMessage(),
+                      decoration: InputDecoration(
+                        hintText: 'Write a message...',
+                        filled: true,
+                        fillColor: const Color(0xFFF2F5F7),
+                        contentPadding:
+                        const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: _sending ? null : _sendMessage,
+                    icon: _sending
+                        ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                        : const Icon(Icons.send_rounded),
+                    style: IconButton.styleFrom(
+                      backgroundColor: friendzaGreen,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =====================================================
+// FRIENDS
+// =====================================================
+
+class FriendsScreen extends StatefulWidget {
+  const FriendsScreen({super.key});
+
+  @override
+  State<FriendsScreen> createState() => _FriendsScreenState();
+}
+
+class _FriendsScreenState extends State<FriendsScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  final TextEditingController _searchController =
+  TextEditingController();
+
+  bool _loading = true;
+  String? _error;
+  String? _workingRequestId;
+
+  final Set<String> _openingChats = {};
+
+  List<Map<String, dynamic>> _profiles = [];
+  List<Map<String, dynamic>> _incomingRequests = [];
+  List<Map<String, dynamic>> _outgoingRequests = [];
+  List<Map<String, dynamic>> _acceptedIncoming = [];
+
+  String get _userId => supabase.auth.currentUser!.id;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+    );
+
+    _loadFriendsData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _message(String text) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
+  }
+
+  Future<void> _loadFriendsData() async {
+    if (!mounted) return;
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final userId = _userId;
+
+      final results = await Future.wait([
+        supabase
+            .from('profiles')
+            .select('id, full_name')
+            .neq('id', userId)
+            .order('full_name'),
+        supabase
+            .from('friend_requests')
+            .select(
+          'id, sender_id, receiver_id, status, created_at',
+        )
+            .eq('receiver_id', userId)
+            .eq('status', 'pending')
+            .order('created_at', ascending: false),
+        supabase
+            .from('friend_requests')
+            .select(
+          'id, sender_id, receiver_id, status, created_at',
+        )
+            .eq('sender_id', userId)
+            .order('created_at', ascending: false),
+        supabase
+            .from('friend_requests')
+            .select(
+          'id, sender_id, receiver_id, status, created_at',
+        )
+            .eq('receiver_id', userId)
+            .eq('status', 'accepted'),
+      ]);
+
+      if (!mounted) return;
+
+      setState(() {
+        _profiles =
+        List<Map<String, dynamic>>.from(results[0] as List);
+
+        _incomingRequests =
+        List<Map<String, dynamic>>.from(results[1] as List);
+
+        _outgoingRequests =
+        List<Map<String, dynamic>>.from(results[2] as List);
+
+        _acceptedIncoming =
+        List<Map<String, dynamic>>.from(results[3] as List);
+
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      debugPrint('Friendza friends error: $error');
+
+      setState(() {
+        _loading = false;
+        _error =
+        'Could not load friends. Check your connection and Supabase permissions.';
+      });
+    }
+  }
+
+  String _nameFor(String? id) {
+    if (id == null) return 'Friend';
+
+    for (final profile in _profiles) {
+      if (profile['id']?.toString() == id) {
+        final name = profile['full_name']?.toString().trim();
+
+        if (name != null && name.isNotEmpty) {
+          return name;
+        }
+      }
+    }
+
+    return 'Friend';
+  }
+
+  String? _requestStatusWith(String otherUserId) {
+    for (final request in _outgoingRequests) {
+      if (request['receiver_id']?.toString() == otherUserId) {
+        return request['status']?.toString();
+      }
+    }
+
+    for (final request in _incomingRequests) {
+      if (request['sender_id']?.toString() == otherUserId) {
+        return 'received';
+      }
+    }
+
+    for (final request in _acceptedIncoming) {
+      if (request['sender_id']?.toString() == otherUserId) {
+        return 'accepted';
+      }
+    }
+
+    return null;
+  }
+
+  bool _isMyFriend(String otherUserId) {
+    for (final request in _outgoingRequests) {
+      if (request['receiver_id']?.toString() == otherUserId &&
+          request['status'] == 'accepted') {
+        return true;
+      }
+    }
+
+    for (final request in _acceptedIncoming) {
+      if (request['sender_id']?.toString() == otherUserId) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  Future<void> _sendFriendRequest(String receiverId) async {
+    if (receiverId == _userId) return;
+
+    final status = _requestStatusWith(receiverId);
+
+    if (status == 'accepted') {
+      _message('You are already friends.');
+      return;
+    }
+
+    if (status == 'pending') {
+      _message('You have already sent a request.');
+      return;
+    }
+
+    if (status == 'received') {
+      _message(
+        'This person has already sent you a request. Open Requests to respond.',
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final outgoing = await supabase
+          .from('friend_requests')
+          .select('id, status')
+          .eq('sender_id', _userId)
+          .eq('receiver_id', receiverId);
+
+      final incoming = await supabase
+          .from('friend_requests')
+          .select('id, status')
+          .eq('sender_id', receiverId)
+          .eq('receiver_id', _userId);
+
+      if ((outgoing as List).isNotEmpty ||
+          (incoming as List).isNotEmpty) {
+        _message(
+          'A request between these accounts already exists. Refresh Friends.',
+        );
+
+        await _loadFriendsData();
+        return;
+      }
+
+      await supabase.from('friend_requests').insert({
+        'sender_id': _userId,
+        'receiver_id': receiverId,
+        'status': 'pending',
+      });
+
+      _message(
+        'Friend request sent to ${_nameFor(receiverId)}.',
+      );
+
+      await _loadFriendsData();
+    } catch (error) {
+      debugPrint('Friendza send request error: $error');
+
+      _message(
+        'Could not send the request. Check friend_requests permissions.',
+      );
+
+      await _loadFriendsData();
+    }
+  }
+
+  Future<void> _respondToRequest(
+      Map<String, dynamic> request,
+      String newStatus,
+      ) async {
+    final requestId = request['id']?.toString();
+
+    if (requestId == null) {
+      _message('Request ID missing. Refresh and try again.');
+      return;
+    }
+
+    setState(() => _workingRequestId = requestId);
+
+    try {
+      final updated = await supabase
+          .from('friend_requests')
+          .update({'status': newStatus})
+          .eq('id', requestId)
+          .eq('receiver_id', _userId)
+          .eq('status', 'pending')
+          .select('id');
+
+      if ((updated as List).isEmpty) {
+        _message(
+          'The request was not updated. Check your UPDATE policy.',
+        );
+      } else {
+        _message(
+          newStatus == 'accepted'
+              ? 'Friend request accepted!'
+              : 'Friend request rejected.',
+        );
+      }
+
+      await _loadFriendsData();
+    } catch (error) {
+      debugPrint('Friendza respond to request error: $error');
+
+      _message(
+        'Could not update the request. Check friend_requests permissions.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _workingRequestId = null);
+      }
+    }
+  }
+
+  Future<void> _openChat(
+      String friendId,
+      String friendName,
+      ) async {
+    if (_openingChats.contains(friendId)) return;
+
+    setState(() => _openingChats.add(friendId));
+
+    try {
+      final result = await supabase.rpc(
+        'create_friend_conversation',
+        params: {'friend_id': friendId},
+      );
+
+      final conversationId = result.toString();
+
+      if (!mounted) return;
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatRoomScreen(
+            conversationId: conversationId,
+            friendId: friendId,
+            friendName: friendName,
+          ),
+        ),
+      );
+    } on PostgrestException catch (error) {
+      _message('Could not open chat: ${error.message}');
+    } catch (error) {
+      debugPrint('Friendza open chat error: $error');
+
+      _message(
+        'Could not open this chat. Check your connection and friend status.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _openingChats.remove(friendId));
+      }
+    }
+  }
+
+  Widget _emptyState(
+      IconData icon,
+      String title,
+      String subtitle,
+      ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 58,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFindFriends() {
+    final search = _searchController.text.trim().toLowerCase();
+
+    final filtered = _profiles.where((profile) {
+      final name =
+      (profile['full_name'] ?? '').toString().toLowerCase();
+
+      return name.contains(search);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      return _emptyState(
+        Icons.person_search,
+        'No users found',
+        search.isEmpty
+            ? 'Other registered users will appear here.'
+            : 'Try another name.',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadFriendsData,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: filtered.length,
+        itemBuilder: (context, index) {
+          final profile = filtered[index];
+          final id = profile['id'].toString();
+          final name = _nameFor(id);
+          final status = _requestStatusWith(id);
+          final isFriend = _isMyFriend(id);
+
+          var buttonText = 'Add Friend';
+          var buttonIcon = Icons.person_add_alt_1;
+          var disabled = false;
+
+          if (isFriend) {
+            buttonText = 'Friends';
+            buttonIcon = Icons.people;
+            disabled = true;
+          } else if (status == 'pending') {
+            buttonText = 'Requested';
+            buttonIcon = Icons.schedule;
+            disabled = true;
+          } else if (status == 'received') {
+            buttonText = 'Respond';
+            buttonIcon = Icons.mark_chat_unread_outlined;
+            disabled = true;
+          } else if (status == 'rejected') {
+            buttonText = 'Request Exists';
+            buttonIcon = Icons.info_outline;
+            disabled = true;
+          }
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 10),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: friendzaGreen.withAlpha(30),
+                child: Text(
+                  name.isEmpty ? '?' : name[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Color(0xFF138D75),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              title: Text(
+                name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                isFriend
+                    ? 'Your Friend'
+                    : status == 'pending'
+                    ? 'Friend request sent'
+                    : status == 'received'
+                    ? 'Sent you a friend request'
+                    : 'Friendza member',
+              ),
+              trailing: OutlinedButton.icon(
+                onPressed: disabled
+                    ? null
+                    : () => _sendFriendRequest(id),
+                icon: Icon(buttonIcon, size: 17),
+                label: Text(buttonText),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildRequests() {
+    if (_incomingRequests.isEmpty) {
+      return _emptyState(
+        Icons.mark_email_read_outlined,
+        'No new requests',
+        'Friend requests sent to you will appear here.',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadFriendsData,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: _incomingRequests.length,
+        itemBuilder: (context, index) {
+          final request = _incomingRequests[index];
+          final senderId = request['sender_id'].toString();
+          final requestId = request['id'].toString();
+          final isWorking = _workingRequestId == requestId;
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      child: Text(
+                        _nameFor(senderId)[0].toUpperCase(),
+                      ),
+                    ),
+                    title: Text(
+                      _nameFor(senderId),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Wants to be your friend',
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: isWorking
+                              ? null
+                              : () => _respondToRequest(
+                            request,
+                            'accepted',
+                          ),
+                          icon: const Icon(Icons.check),
+                          label: const Text('Accept'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: isWorking
+                              ? null
+                              : () => _respondToRequest(
+                            request,
+                            'rejected',
+                          ),
+                          icon: const Icon(Icons.close),
+                          label: const Text('Reject'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMyFriends() {
+    final friendsById = <String, Map<String, dynamic>>{};
+
+    for (final request in _outgoingRequests) {
+      if (request['status'] == 'accepted') {
+        friendsById[request['receiver_id'].toString()] = request;
+      }
+    }
+
+    for (final request in _acceptedIncoming) {
+      friendsById[request['sender_id'].toString()] = request;
+    }
+
+    final friendIds = friendsById.keys.toList();
+
+    if (friendIds.isEmpty) {
+      return _emptyState(
+        Icons.people_outline,
+        'No friends yet',
+        'Find people and send friend requests to build your friends list.',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadFriendsData,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: friendIds.length,
+        itemBuilder: (context, index) {
+          final friendId = friendIds[index];
+          final name = _nameFor(friendId);
+          final opening = _openingChats.contains(friendId);
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 10),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: friendzaGreen.withAlpha(30),
+                child: Text(
+                  name.isEmpty ? '?' : name[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Color(0xFF138D75),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              title: Text(
+                name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: const Text('Friend'),
+              trailing: FilledButton.icon(
+                onPressed: opening
+                    ? null
+                    : () => _openChat(friendId, name),
+                icon: opening
+                    ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+                    : const Icon(
+                  Icons.chat_bubble_outline,
+                  size: 18,
+                ),
+                label: const Text('Message'),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            12,
+          ),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: 'Search for people...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: IconButton(
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() {});
+                },
+                icon: const Icon(Icons.close),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
+        TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabs: [
+            const Tab(text: 'Find Friends'),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Requests'),
+                  if (_incomingRequests.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    CircleAvatar(
+                      radius: 10,
+                      backgroundColor: friendzaGreen,
+                      child: Text(
+                        '${_incomingRequests.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const Tab(text: 'My Friends'),
+          ],
+        ),
+        Expanded(
+          child: _loading
+              ? const Center(
+            child: CircularProgressIndicator(),
+          )
+              : _error != null
+              ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: _loadFriendsData,
+                    child: const Text('Try Again'),
+                  ),
+                ],
+              ),
+            ),
+          )
+              : TabBarView(
+            controller: _tabController,
+            children: [
+              _buildFindFriends(),
+              _buildRequests(),
+              _buildMyFriends(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =====================================================
+// STORIES
+// =====================================================
+
+class StoriesScreen extends StatelessWidget {
+  const StoriesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.auto_awesome,
+              size: 70,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'Friendza Stories',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Share moments with your friends. Stories will be built next.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =====================================================
+// PROFILE AND LOGOUT
+// =====================================================
+
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = supabase.auth.currentUser;
+    final metadata = user?.userMetadata;
+
+    final fullName = metadata?['full_name']?.toString().trim();
+
+    final displayName =
+    fullName == null || fullName.isEmpty
+        ? 'Friendza User'
+        : fullName;
+
+    final email = user?.email ?? '';
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 48,
+              backgroundColor: friendzaGreen.withAlpha(30),
+              child: Text(
+                displayName[0].toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF138D75),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              displayName,
+              style: const TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              email,
+              style: const TextStyle(
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 32),
+            const Card(
+              child: ListTile(
+                leading: Icon(Icons.person_outline),
+                title: Text('Account'),
+                subtitle: Text('Your Friendza account'),
+              ),
+            ),
+            const Card(
+              child: ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('About Friendza'),
+                subtitle: Text(
+                  'Your friends. Your conversations.',
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  try {
+                    await supabase.auth.signOut();
+
+                    if (!context.mounted) return;
+
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => const WelcomeScreen(),
+                      ),
+                          (route) => false,
+                    );
+                  } catch (error) {
+                    debugPrint('Friendza logout error: $error');
+
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Could not log out. Try again.',
+                        ),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.logout),
+                label: const Text('Log Out'),
+              ),
+            ),
+          ],
         ),
       ),
     );
