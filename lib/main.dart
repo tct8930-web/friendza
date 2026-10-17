@@ -1147,7 +1147,7 @@ Widget build(BuildContext context) {
                                 child: Text(
                                   content,
                                   style: const TextStyle(
-                                    color: Color(0xFF202C33),
+                                    color: Colors.white,
                                     fontSize: 15,
                                     height: 1.35,
                                   ),
@@ -1160,7 +1160,7 @@ Widget build(BuildContext context) {
                                   Text(
                                     time,
                                     style: TextStyle(
-                                      color: Colors.grey.shade600,
+                                      color: Colors.white70,
                                       fontSize: 10,
                                     ),
                                   ),
