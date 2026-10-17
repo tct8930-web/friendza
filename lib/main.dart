@@ -1217,7 +1217,10 @@ Widget build(BuildContext context) {
                       decoration: InputDecoration(
                         hintText: 'Write a message...',
                         filled: true,
-                        fillColor: const Color(0xFFF2F5F7),
+                        fillColor: const Color(0xFF24212D),
+                        hintStyle: const TextStyle(
+                          color: Colors.white54,
+                        ),    
                         contentPadding:
                         const EdgeInsets.symmetric(
                           horizontal: 18,
