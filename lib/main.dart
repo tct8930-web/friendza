@@ -9,9 +9,9 @@ const String supabasePublishableKey =
 
 final SupabaseClient supabase = Supabase.instance.client;
 
-const Color friendzaGreen = Color(0xFF16A085);
-const Color friendzaDarkGreen = Color(0xFF117A65);
-const Color friendzaBackground = Color(0xFFF3F6F8);
+const Color friendzaGreen = Color(0xFFA78BFA);
+const Color friendzaDarkGreen = Color(0xFF7C3AED);
+const Color friendzaBackground = Color(0xFF101016);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
