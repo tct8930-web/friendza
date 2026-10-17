@@ -1118,8 +1118,8 @@ Widget build(BuildContext context) {
                           ),
                           decoration: BoxDecoration(
                             color: isMine
-                                ? const Color(0xFFD9FDD3)
-                                : Colors.white,
+                                ? const Color(0xFF7C3AED)
+                                : const Color(0xFF24212D),
                             borderRadius: BorderRadius.only(
                               topLeft: const Radius.circular(17),
                               topRight: const Radius.circular(17),
