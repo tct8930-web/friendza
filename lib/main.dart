@@ -1194,7 +1194,7 @@ Widget build(BuildContext context) {
                 10,
               ),
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: Color(0xFF181720),
                 boxShadow: [
                   BoxShadow(
                     color: Color(0x10000000),
@@ -1240,11 +1240,9 @@ Widget build(BuildContext context) {
                             width: 1.5,
                           ),
                         ),
-                        hintStyle: const TextStyle(
-                          color: Colors.white54,
-                        ),                        
                       ),
                     ),
+                  ),
                   const SizedBox(width: 8),
                   SizedBox(
                     height: 48,
