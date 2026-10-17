@@ -916,13 +916,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFEFF3F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
+  
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: friendzaBackground,
+    appBar: AppBar(
+      backgroundColor: const Color(0xFF101016),
+      foregroundColor: Colors.white,
+      elevation: 0,
+
         titleSpacing: 0,
         title: Row(
           children: [
