@@ -32,19 +32,44 @@ class FriendzaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Friendza',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: friendzaGreen,
-        ),
-        scaffoldBackgroundColor: friendzaBackground,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black87,
-          elevation: 0,
-          centerTitle: false,
-        ),
+      
+theme: ThemeData(
+  useMaterial3: true,
+  brightness: Brightness.dark,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: friendzaGreen,
+    brightness: Brightness.dark,
+  ),
+  scaffoldBackgroundColor: friendzaBackground,
+  appBarTheme: const AppBarTheme(
+    backgroundColor: Color(0xFF101016),
+    foregroundColor: Colors.white,
+    elevation: 0,
+    centerTitle: false,
+  ),
+  navigationBarTheme: const NavigationBarThemeData(
+    backgroundColor: Color(0xFF181720),
+    indicatorColor: Color(0xFF3A2B52),
+    elevation: 0,
+  ),
+  cardTheme: CardThemeData(
+    color: Color(0xFF24212D),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(18),
+    ),
+  ),
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom(
+      backgroundColor: friendzaGreen,
+      foregroundColor: Color(0xFF171220),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
+    ),
+  ),
+),
+
       home: const WelcomeScreen(),
     );
   }
