@@ -1234,8 +1234,8 @@ Widget build(BuildContext context) {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(26),
                           borderSide: const BorderSide(
-                            color: friendzaGreen,
-                            width: 1,
+                            color: Color(0xFFA78BFA),
+                            width: 1.5,
                           ),
                         ),
                       ),
