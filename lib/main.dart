@@ -1238,9 +1238,11 @@ Widget build(BuildContext context) {
                             width: 1.5,
                           ),
                         ),
+                        hintStyle: const TextStyle(
+                          color: Colors.white54,
+                        ),                        
                       ),
                     ),
-                  ),
                   const SizedBox(width: 8),
                   SizedBox(
                     height: 48,
