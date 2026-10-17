@@ -936,7 +936,7 @@ Widget build(BuildContext context) {
                     ? '?'
                     : widget.friendName[0].toUpperCase(),
                 style: const TextStyle(
-                  color: friendzaDarkGreen,
+                  color: Color(0xFFA78BFA),
                   fontWeight: FontWeight.bold,
                 ),
               ),
