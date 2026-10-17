@@ -1221,8 +1221,7 @@ Widget build(BuildContext context) {
                         hintStyle: const TextStyle(
                           color: Colors.white54,
                         ),    
-                        contentPadding:
-                        const EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 18,
                           vertical: 12,
                         ),
