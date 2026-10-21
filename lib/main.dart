@@ -874,7 +874,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (!_scrollController.hasClients) return;
 
       _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
+        0,
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
@@ -884,11 +884,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isNearBottom() {
     if (!_scrollController.hasClients) return true;
 
-    final position = _scrollController.position;
-
-    return position.maxScrollExtent - position.pixels < 160;
+    return _scrollController.position.pixels < 160;
   }
-
   String _formatMessageTime(dynamic value) {
     if (value == null) return '';
 
@@ -1062,9 +1059,7 @@ Widget build(BuildContext context) {
                   }
 
                   if (!_initialScrollDone || _wasNearBottom) {
-                    _scrollController.jumpTo(
-                      _scrollController.position.maxScrollExtent,
-                    );
+                    _scrollController.jumpTo(0);
                   }
 
                   _initialScrollDone = true;
@@ -1081,6 +1076,7 @@ Widget build(BuildContext context) {
                   },
                   child: ListView.builder(
                     controller: _scrollController,
+                    reverse: true,
                     padding: const EdgeInsets.fromLTRB(
                       12,
                       18,
@@ -1089,7 +1085,7 @@ Widget build(BuildContext context) {
                     ),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
-                      final message = messages[index];
+                      final message = messages[messages.length - 1 - index];
 
                       final isMine =
                           message['sender_id'].toString() == _userId;
