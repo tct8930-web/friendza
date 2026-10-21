@@ -818,11 +818,58 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   ScrollController();
 
   bool _sending = false;
+  bool _markingRead = false;
   bool _initialScrollDone = false;
   bool _wasNearBottom = true;
 
   String get _userId => supabase.auth.currentUser!.id;
 
+  @override
+  void initState() {
+    super.initState();
+    _markMessagesRead();
+  }
+
+  Future<void> _markMessagesRead() async {
+    try {
+      await supabase.rpc(
+        'mark_messages_read',
+        params: {
+          'p_conversation_id': widget.conversationId,
+        },
+      );
+    } catch (e) {
+      debugPrint('Could not mark messages as read: $e');
+    }
+  }
+  Future<void> _markMessagesReadIfNeeded(
+      List<Map<String, dynamic>> messages,
+      ) async {
+    if (_markingRead) return;
+
+    final hasUnreadMessages = messages.any(
+          (message) =>
+      message['sender_id'] != _userId &&
+          message['read_at'] == null,
+    );
+
+    if (!hasUnreadMessages) return;
+
+    _markingRead = true;
+
+    try {
+      await supabase.rpc(
+        'mark_messages_read',
+        params: {
+          'p_conversation_id': widget.conversationId,
+        },
+      );
+    } catch (e) {
+      debugPrint('Could not mark messages as read: $e');
+    } finally {
+      _markingRead = false;
+    }
+  }
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
 
@@ -1016,6 +1063,12 @@ Widget build(BuildContext context) {
 
                 final messages = snapshot.data!;
 
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    _markMessagesReadIfNeeded(messages);
+                  }
+                });
+
                 if (messages.isEmpty) {
                   return Center(
                     child: Padding(
@@ -1162,10 +1215,12 @@ Widget build(BuildContext context) {
                                   ),
                                   if (isMine) ...[
                                     const SizedBox(width: 4),
-                                    const Icon(
+                                    Icon(
                                       Icons.done_all,
                                       size: 15,
-                                      color: Color(0xFF53A6A0),
+                                      color: message['read_at'] != null
+                                          ? const Color(0xFFA78BFA)
+                                          : const Color(0xFF53A6A0),
                                     ),
                                   ],
                                 ],
