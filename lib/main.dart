@@ -1,5 +1,7 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 
 const String supabaseUrl =
     'https://njjsqppwbphutahmfeor.supabase.co';
@@ -959,7 +961,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _scrollController.dispose();
     super.dispose();
   }
+  Future<List<Map<String, dynamic>>> _loadStories() async {
+  final supabase = Supabase.instance.client;
+  final user = supabase.auth.currentUser;
 
+  if (user == null) return [];
+
+  final stories = await supabase
+      .from('stories')
+      .select()
+      .gt('expires_at', DateTime.now().toUtc().toIso8601String())
+      .order('created_at', ascending: false);
+
+  return List<Map<String, dynamic>>.from(stories);
+}
   
 @override
 Widget build(BuildContext context) {
@@ -2077,38 +2092,474 @@ class _FriendsScreenState extends State<FriendsScreen>
 // STORIES
 // =====================================================
 
-class StoriesScreen extends StatelessWidget {
+class StoriesScreen extends StatefulWidget {
   const StoriesScreen({super.key});
 
   @override
+  State<StoriesScreen> createState() => _StoriesScreenState();
+}
+
+class _StoriesScreenState extends State<StoriesScreen> {
+
+  static const Color violet = Color(0xFFA78BFA);
+  static const Color cardColor = Color(0xFF24212D);
+
+  XFile? selectedMedia;
+bool isVideo = false;
+
+Future<List<Map<String, dynamic>>> _loadStories() async {
+  final supabase = Supabase.instance.client;
+  final user = supabase.auth.currentUser;
+
+  if (user == null) return [];
+
+  final stories = await supabase
+      .from('stories')
+      .select()
+      .gt('expires_at', DateTime.now().toUtc().toIso8601String())
+      .order('created_at', ascending: false);
+
+ return List<Map<String, dynamic>>.from(stories);
+}
+
+Future<String> _getStoryUrl(String mediaPath) async {
+  final supabase = Supabase.instance.client;
+
+  return await supabase.storage
+      .from('friendza-stories')
+      .createSignedUrl(mediaPath, 3600);
+}
+
+Future<void> _postStory() async {
+    if (selectedMedia == null) return;
+
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to post a story.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final media = selectedMedia!;
+      final bytes = await media.readAsBytes();
+
+      final mediaType = isVideo ? 'video' : 'image';
+      final contentType =
+          media.mimeType ?? (isVideo ? 'video/mp4' : 'image/jpeg');
+
+      final filePath =
+          '${user.id}/${DateTime.now().millisecondsSinceEpoch}_${media.name}';
+
+      await supabase.storage
+          .from('friendza-stories')
+          .uploadBinary(
+        filePath,
+        bytes,
+        fileOptions: FileOptions(
+          contentType: contentType,
+          upsert: false,
+        ),
+      );
+
+      await supabase.from('stories').insert({
+        'user_id': user.id,
+        'media_path': filePath,
+        'media_type': mediaType,
+      });
+
+      if (!mounted) return;
+
+      setState(() {
+        selectedMedia = null;
+        isVideo = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Your story was posted successfully!'),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not post story: $error'),
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      backgroundColor: const Color(0xFF101016),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF101016),
+        elevation: 0,
+        title: const Text(
+          'Stories',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFFF5F3FF),
+          ),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const Text(
+            'Share your moment',
+            style: TextStyle(
+              color: Color(0xFFF5F3FF),
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Little moments bring friends closer.',
+            style: TextStyle(color: Colors.white60),
+          ),
+          const SizedBox(height: 24),
+
+          // My Story card
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () async {
+              final ImagePicker picker = ImagePicker();
+              final XFile? media = await picker.pickMedia();
+
+              if (media == null) return;
+              if (!context.mounted) return;
+
+              setState(() {
+                selectedMedia = media;
+                isVideo = media.mimeType?.startsWith('video/') ?? false;
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Selected: ${media.name}')),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3A2B52),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: violet,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.add,
+                      color: violet,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'My Story',
+                          style: TextStyle(
+                            color: Color(0xFFF5F3FF),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          'Share a photo or video with friends',
+                          style: TextStyle(
+                            color: Colors.white60,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: violet,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // PHOTO PREVIEW STARTS HERE
+          if (selectedMedia != null) ...[
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: isVideo
+                  ? Container(
+                height: 220,
+                color: cardColor,
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.play_circle_outline,
+                  color: violet,
+                  size: 60,
+                ),
+              )
+                  : FutureBuilder<Uint8List>(
+                future: selectedMedia!.readAsBytes(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Text(
+                      'Could not load this photo.',
+                      style: TextStyle(color: Colors.white),
+                    );
+                  }
+
+                  if (!snapshot.hasData) {
+                    return const SizedBox(
+                      height: 180,
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  return Image.memory(
+                    snapshot.data!,
+                    height: 220,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  );
+                },
+              ),
+            ),
+          ],
+          // PHOTO PREVIEW ENDS HERE
+
+          if (selectedMedia != null) ...[
+            const SizedBox(height: 16),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _postStory,
+                icon: const Icon(Icons.send),
+                label: const Text('Post Story'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: violet,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 30),
+
+          const Text(
+            'Recent stories',
+            style: TextStyle(
+              color: Color(0xFFF5F3FF),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+    FutureBuilder<List<Map<String, dynamic>>>(
+  future: _loadStories(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(
+            color: violet,
+          ),
+        ),
+      );
+    }
+
+    if (snapshot.hasError) {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      'Could not load stories: ${snapshot.error}',
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        color: Colors.white70,
+      ),
+    ),
+  );
+}
+
+    final stories = snapshot.data ?? [];
+
+    if (stories.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 32,
+        ),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Column(
           children: [
             Icon(
               Icons.auto_awesome,
-              size: 70,
-              color: Colors.grey.shade400,
+              color: violet,
+              size: 42,
             ),
-            const SizedBox(height: 18),
-            const Text(
-              'Friendza Stories',
+            SizedBox(height: 14),
+            Text(
+              'Your friends’ stories will appear here',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+                color: Color(0xFFF5F3FF),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Share moments with your friends. Stories will be built next.',
+            SizedBox(height: 8),
+            Text(
+              'When your friends share moments, '
+              'you’ll find them here.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.black54),
+              style: TextStyle(
+                color: Colors.white60,
+                height: 1.5,
+              ),
             ),
           ],
         ),
+      );
+    }
+
+    return SizedBox(
+      height: 190,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: stories.length,
+        separatorBuilder: (context, index) =>
+            const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final story = stories[index];
+          final mediaPath = story['media_path'] as String?;
+
+          if (mediaPath == null || mediaPath.isEmpty) {
+            return const SizedBox.shrink();
+          }
+
+          return FutureBuilder<String>(
+            future: _getStoryUrl(mediaPath),
+            builder: (context, urlSnapshot) {
+              return GestureDetector(
+  onTap: () {
+    if (!urlSnapshot.hasData) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: const Color(0xFF101016),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF101016),
+            foregroundColor: Colors.white,
+            title: const Text('Friendza Story'),
+          ),
+          body: Center(
+            child: story['media_type'] == 'video'
+                ? const Text(
+                    'Video story playback will be added next.',
+                    style: TextStyle(color: Colors.white),
+                  )
+                : Image.network(
+                    urlSnapshot.data!,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(
+                      Icons.broken_image_outlined,
+                      color: violet,
+                      size: 48,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  },
+  child: Container(
+    width: 125,
+    decoration: BoxDecoration(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(18),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: urlSnapshot.hasData
+        ? story['media_type'] == 'video'
+            ? const Center(
+                child: Icon(
+                  Icons.play_circle_outline,
+                  color: violet,
+                  size: 48,
+                ),
+              )
+            : Image.network(
+                urlSnapshot.data!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    color: violet,
+                    size: 32,
+                  ),
+                ),
+              )
+        : const Center(
+            child: CircularProgressIndicator(
+              color: violet,
+            ),
+          ),
+  ),
+);
+            },
+          );
+        },
+      ),
+    );
+  },
+),
+        ],
       ),
     );
   }
@@ -2168,20 +2619,68 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            const Card(
-              child: ListTile(
-                leading: Icon(Icons.person_outline),
-                title: Text('Account'),
-                subtitle: Text('Your Friendza account'),
-              ),
-            ),
-            const Card(
-              child: ListTile(
-                leading: Icon(Icons.info_outline),
-                title: Text('About Friendza'),
-                subtitle: Text(
-                  'Your friends. Your conversations.',
-                ),
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFF3A2B52),
+                      child: const Icon(
+                        Icons.person_outline,
+                        color: Color(0xFFA78BFA),
+                      ),
+                    ),
+                    title: const Text('Account'),
+                    subtitle: const Text('Your Friendza account'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          backgroundColor: const Color(0xFF24212D),
+                          title: const Text('Your Friendza account'),
+                          content: const Text(
+                            'Manage your account and personal details here.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext);
+                              },
+                              child: const Text(
+                                'Close',
+                                style: TextStyle(
+                                  color: Color(0xFFA78BFA),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.info_outline,
+                      color: Color(0xFFA78BFA),
+                    ),
+                    title: const Text('About Friendza'),
+                    subtitle: const Text(
+                      'Your friends. Your conversations.',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      showAboutDialog(
+                        context: context,
+                        applicationName: 'Friendza',
+                        applicationVersion: '1.0.0',
+                        applicationLegalese:
+                        'Your friends. Your conversations.',
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
