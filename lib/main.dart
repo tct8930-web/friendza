@@ -2116,6 +2116,59 @@ Future<String> _getStoryUrl(String mediaPath) async {
       .createSignedUrl(mediaPath, 3600);
 }
 
+Future<void> _recordStoryView(String storyId) async {
+  final supabase = Supabase.instance.client;
+  final user = supabase.auth.currentUser;
+
+  if (user == null) return;
+
+  await supabase.from('story_views').upsert(
+    {
+      'story_id': storyId,
+      'viewer_id': user.id,
+    },
+    onConflict: 'story_id,viewer_id',
+    ignoreDuplicates: true,
+  );
+}
+
+// Load the people who viewed a story.
+Future<List<Map<String, dynamic>>> _loadStoryViewers(
+    String storyId) async {
+  final supabase = Supabase.instance.client;
+
+  final views = await supabase
+      .from('story_views')
+      .select('viewer_id, viewed_at')
+      .eq('story_id', storyId)
+      .order('viewed_at', ascending: false);
+
+  if (views.isEmpty) return [];
+
+  final viewerIds = views
+      .map((view) => view['viewer_id'].toString())
+      .toSet()
+      .toList();
+
+  final profiles = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .inFilter('id', viewerIds);
+
+  return views.map((view) {
+    final profile = profiles.firstWhere(
+      (profile) => profile['id'] == view['viewer_id'],
+      orElse: () => <String, dynamic>{},
+    );
+
+    return {
+      ...profile,
+      'viewer_id': view['viewer_id'],
+      'viewed_at': view['viewed_at'],
+    };
+  }).toList();
+}
+
 Future<void> _postStory() async {
     if (selectedMedia == null) return;
 
@@ -2469,40 +2522,132 @@ Future<void> _postStory() async {
             future: _getStoryUrl(mediaPath),
             builder: (context, urlSnapshot) {
               return GestureDetector(
-  onTap: () {
-    if (!urlSnapshot.hasData) return;
+  onTap: () async {
+  if (!urlSnapshot.hasData) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
+  // Record the view, unless this is your own story.
+  final currentUserId =
+      Supabase.instance.client.auth.currentUser?.id;
+
+  if (story['user_id']?.toString() != currentUserId) {
+    try {
+      await _recordStoryView(story['id'].toString());
+    } catch (error) {
+      debugPrint('Could not record story view: $error');
+    }
+  }
+
+  if (!context.mounted) return;
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => Scaffold(
+        backgroundColor: const Color(0xFF101016),
+        appBar: AppBar(
           backgroundColor: const Color(0xFF101016),
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF101016),
-            foregroundColor: Colors.white,
-            title: const Text('Friendza Story'),
-          ),
-          body: Center(
-            child: story['media_type'] == 'video'
-                ? const Text(
-                    'Video story playback will be added next.',
-                    style: TextStyle(color: Colors.white),
-                  )
-                : Image.network(
-                    urlSnapshot.data!,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(
-                      Icons.broken_image_outlined,
-                      color: violet,
-                      size: 48,
-                    ),
-                  ),
-          ),
+          foregroundColor: Colors.white,
+          title: const Text('Friendza Story'),
         ),
+        body: Column(
+  children: [
+    Expanded(
+      child: Center(
+        child: story['media_type'] == 'video'
+            ? const Text(
+                'Video story playback will be added next.',
+                style: TextStyle(color: Colors.white),
+              )
+            : Image.network(
+                urlSnapshot.data!,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(
+                  Icons.broken_image_outlined,
+                  color: violet,
+                  size: 48,
+                ),
+              ),
       ),
-    );
-  },
+    ),
+
+    // Story viewers section
+    if (story['user_id']?.toString() ==
+        Supabase.instance.client.auth.currentUser?.id)
+      FutureBuilder<List<Map<String, dynamic>>>(
+        future: _loadStoryViewers(story['id'].toString()),
+        builder: (context, snapshot) {
+          final viewers = snapshot.data ?? [];
+
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            color: cardColor,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.visibility, color: violet),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${viewers.length} views',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting)
+                  const Center(
+                    child: CircularProgressIndicator(color: violet),
+                  )
+                else if (viewers.isEmpty)
+                  const Text(
+                    'No viewers yet',
+                    style: TextStyle(color: Colors.white70),
+                  )
+                else
+                  ...viewers.map((viewer) {
+                    final avatarUrl =
+                        viewer['avatar_url']?.toString() ?? '';
+
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: violet,
+                        backgroundImage: avatarUrl.isNotEmpty
+                            ? NetworkImage(avatarUrl)
+                            : null,
+                        child: avatarUrl.isEmpty
+                            ? const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                      title: Text(
+                        viewer['full_name']?.toString() ??
+                            'Friendza user',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    );
+                  }),
+              ],
+            ),
+          );
+        },
+      ),
+  ],
+),
+      ),
+    ),
+  );
+},
   child: Container(
   width: 100,
   decoration: BoxDecoration(
