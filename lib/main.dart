@@ -961,20 +961,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _scrollController.dispose();
     super.dispose();
   }
-  Future<List<Map<String, dynamic>>> _loadStories() async {
-  final supabase = Supabase.instance.client;
-  final user = supabase.auth.currentUser;
-
-  if (user == null) return [];
-
-  final stories = await supabase
-      .from('stories')
-      .select()
-      .gt('expires_at', DateTime.now().toUtc().toIso8601String())
-      .order('created_at', ascending: false);
-
-  return List<Map<String, dynamic>>.from(stories);
-}
   
 @override
 Widget build(BuildContext context) {
@@ -2518,14 +2504,19 @@ Future<void> _postStory() async {
     );
   },
   child: Container(
-    width: 125,
-    decoration: BoxDecoration(
-      color: cardColor,
-      borderRadius: BorderRadius.circular(18),
+  width: 100,
+  decoration: BoxDecoration(
+    color: cardColor,
+    shape: BoxShape.circle,
+    border: Border.all(
+      color: violet,
+      width: 3,
     ),
-    clipBehavior: Clip.antiAlias,
-    child: urlSnapshot.hasData
-        ? story['media_type'] == 'video'
+  ),
+  padding: const EdgeInsets.all(4),
+  clipBehavior: Clip.antiAlias,
+  child: urlSnapshot.hasData
+      ? story['media_type'] == 'video'
             ? const Center(
                 child: Icon(
                   Icons.play_circle_outline,
