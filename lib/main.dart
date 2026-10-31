@@ -2435,29 +2435,25 @@ Future<void> _postStory() async {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: CircularProgressIndicator(
-            color: violet,
-          ),
+          child: CircularProgressIndicator(color: violet),
         ),
       );
     }
 
     if (snapshot.hasError) {
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: cardColor,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      'Could not load stories: ${snapshot.error}',
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-        color: Colors.white70,
-      ),
-    ),
-  );
-}
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          'Could not load stories: ${snapshot.error}',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70),
+        ),
+      );
+    }
 
     final stories = snapshot.data ?? [];
 
@@ -2473,11 +2469,7 @@ Future<void> _postStory() async {
         ),
         child: const Column(
           children: [
-            Icon(
-              Icons.auto_awesome,
-              color: violet,
-              size: 42,
-            ),
+            Icon(Icons.auto_awesome, color: violet, size: 42),
             SizedBox(height: 14),
             Text(
               'Your friends’ stories will appear here',
@@ -2503,191 +2495,277 @@ Future<void> _postStory() async {
       );
     }
 
+    // Group all stories belonging to the same person.
+    final groupedStories = <String, List<Map<String, dynamic>>>{};
+
+    for (final story in stories) {
+      final userId = story['user_id']?.toString();
+      final mediaPath = story['media_path']?.toString() ?? '';
+
+      if (userId == null || userId.isEmpty || mediaPath.isEmpty) {
+        continue;
+      }
+
+      groupedStories.putIfAbsent(userId, () => []);
+      groupedStories[userId]!.add(story);
+    }
+
+    final storyGroups = groupedStories.values.toList();
+
     return SizedBox(
       height: 190,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: stories.length,
+        itemCount: storyGroups.length,
         separatorBuilder: (context, index) =>
             const SizedBox(width: 12),
         itemBuilder: (context, index) {
-          final story = stories[index];
-          final mediaPath = story['media_path'] as String?;
-
-          if (mediaPath == null || mediaPath.isEmpty) {
-            return const SizedBox.shrink();
-          }
+          final personStories = storyGroups[index];
+          final previewStory = personStories.first;
+          final mediaPath = previewStory['media_path'].toString();
+          final currentUserId =
+              Supabase.instance.client.auth.currentUser?.id;
 
           return FutureBuilder<String>(
             future: _getStoryUrl(mediaPath),
             builder: (context, urlSnapshot) {
               return GestureDetector(
-  onTap: () async {
-  if (!urlSnapshot.hasData) return;
+                onTap: () async {
+                  if (!urlSnapshot.hasData) return;
 
-  // Record the view, unless this is your own story.
-  final currentUserId =
-      Supabase.instance.client.auth.currentUser?.id;
+                  // Record the first story view.
+                  if (previewStory['user_id']?.toString() !=
+                      currentUserId) {
+                    try {
+                      await _recordStoryView(
+                        previewStory['id'].toString(),
+                      );
+                    } catch (error) {
+                      debugPrint('Could not record story view: $error');
+                    }
+                  }
 
-  if (story['user_id']?.toString() != currentUserId) {
-    try {
-      await _recordStoryView(story['id'].toString());
-    } catch (error) {
-      debugPrint('Could not record story view: $error');
-    }
-  }
+                  if (!context.mounted) return;
 
-  if (!context.mounted) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        backgroundColor: const Color(0xFF101016),
+                        appBar: AppBar(
+                          backgroundColor: const Color(0xFF101016),
+                          foregroundColor: Colors.white,
+                          title: const Text('Friendza Story'),
+                        ),
+                        body: PageView.builder(
+                          itemCount: personStories.length,
+                          onPageChanged: (pageIndex) async {
+                            final nextStory = personStories[pageIndex];
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
-        backgroundColor: const Color(0xFF101016),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF101016),
-          foregroundColor: Colors.white,
-          title: const Text('Friendza Story'),
-        ),
-        body: Column(
-  children: [
-    Expanded(
-      child: Center(
-        child: story['media_type'] == 'video'
-            ? const Text(
-                'Video story playback will be added next.',
-                style: TextStyle(color: Colors.white),
-              )
-            : Image.network(
-                urlSnapshot.data!,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(
-                  Icons.broken_image_outlined,
-                  color: violet,
-                  size: 48,
-                ),
-              ),
-      ),
-    ),
+                            if (nextStory['user_id']?.toString() !=
+                                currentUserId) {
+                              try {
+                                await _recordStoryView(
+                                  nextStory['id'].toString(),
+                                );
+                              } catch (error) {
+                                debugPrint(
+                                  'Could not record story view: $error',
+                                );
+                              }
+                            }
+                          },
+                          itemBuilder: (context, pageIndex) {
+                            final currentStory =
+                                personStories[pageIndex];
 
-    // Story viewers section
-    if (story['user_id']?.toString() ==
-        Supabase.instance.client.auth.currentUser?.id)
-      FutureBuilder<List<Map<String, dynamic>>>(
-        future: _loadStoryViewers(story['id'].toString()),
-        builder: (context, snapshot) {
-          final viewers = snapshot.data ?? [];
+                            return FutureBuilder<String>(
+                              future: _getStoryUrl(
+                                currentStory['media_path'].toString(),
+                              ),
+                              builder: (context, mediaSnapshot) {
+                                return Column(
+                                  children: [
+                                    Expanded(
+                                      child: Center(
+                                        child: !mediaSnapshot.hasData
+                                            ? const CircularProgressIndicator(
+                                                color: violet,
+                                              )
+                                            : currentStory['media_type'] ==
+                                                    'video'
+                                                ? const Text(
+                                                    'Video story playback will be added next.',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                  )
+                                                : Image.network(
+                                                    mediaSnapshot.data!,
+                                                    fit: BoxFit.contain,
+                                                    errorBuilder: (
+                                                      context,
+                                                      error,
+                                                      stackTrace,
+                                                    ) =>
+                                                        const Icon(
+                                                      Icons.broken_image_outlined,
+                                                      color: violet,
+                                                      size: 48,
+                                                    ),
+                                                  ),
+                                      ),
+                                    ),
 
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: cardColor,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.visibility, color: violet),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${viewers.length} views',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                                    if (currentStory['user_id']
+                                            ?.toString() ==
+                                        currentUserId)
+                                      FutureBuilder<
+                                          List<Map<String, dynamic>>>(
+                                        future: _loadStoryViewers(
+                                          currentStory['id'].toString(),
+                                        ),
+                                        builder: (context, viewerSnapshot) {
+                                          final viewers =
+                                              viewerSnapshot.data ?? [];
+
+                                          return Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(16),
+                                            color: cardColor,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.visibility,
+                                                      color: violet,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      '${viewers.length} views',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 12),
+                                                if (viewerSnapshot
+                                                        .connectionState ==
+                                                    ConnectionState.waiting)
+                                                  const Center(
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      color: violet,
+                                                    ),
+                                                  )
+                                                else if (viewers.isEmpty)
+                                                  const Text(
+                                                    'No viewers yet',
+                                                    style: TextStyle(
+                                                      color: Colors.white70,
+                                                    ),
+                                                  )
+                                                else
+                                                  ...viewers.map((viewer) {
+                                                    final avatarUrl =
+                                                        viewer['avatar_url']
+                                                                ?.toString() ??
+                                                            '';
+
+                                                    return ListTile(
+                                                      contentPadding:
+                                                          EdgeInsets.zero,
+                                                      leading: CircleAvatar(
+                                                        backgroundColor: violet,
+                                                        backgroundImage:
+                                                            avatarUrl.isNotEmpty
+                                                                ? NetworkImage(
+                                                                    avatarUrl,
+                                                                  )
+                                                                : null,
+                                                        child: avatarUrl.isEmpty
+                                                            ? const Icon(
+                                                                Icons.person,
+                                                                color:
+                                                                    Colors.white,
+                                                              )
+                                                            : null,
+                                                      ),
+                                                      title: Text(
+                                                        viewer['full_name']
+                                                                ?.toString() ??
+                                                            'Friendza user',
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                if (snapshot.connectionState ==
-                    ConnectionState.waiting)
-                  const Center(
-                    child: CircularProgressIndicator(color: violet),
-                  )
-                else if (viewers.isEmpty)
-                  const Text(
-                    'No viewers yet',
-                    style: TextStyle(color: Colors.white70),
-                  )
-                else
-                  ...viewers.map((viewer) {
-                    final avatarUrl =
-                        viewer['avatar_url']?.toString() ?? '';
-
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        backgroundColor: violet,
-                        backgroundImage: avatarUrl.isNotEmpty
-                            ? NetworkImage(avatarUrl)
-                            : null,
-                        child: avatarUrl.isEmpty
-                            ? const Icon(
-                                Icons.person,
-                                color: Colors.white,
-                              )
-                            : null,
-                      ),
-                      title: Text(
-                        viewer['full_name']?.toString() ??
-                            'Friendza user',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    );
-                  }),
-              ],
-            ),
-          );
-        },
-      ),
-  ],
-),
-      ),
-    ),
-  );
-},
-  child: Container(
-  width: 100,
-  decoration: BoxDecoration(
-    color: cardColor,
-    shape: BoxShape.circle,
-    border: Border.all(
-      color: violet,
-      width: 3,
-    ),
-  ),
-  padding: const EdgeInsets.all(4),
-  clipBehavior: Clip.antiAlias,
-  child: urlSnapshot.hasData
-      ? story['media_type'] == 'video'
-            ? const Center(
-                child: Icon(
-                  Icons.play_circle_outline,
-                  color: violet,
-                  size: 48,
-                ),
-              )
-            : Image.network(
-                urlSnapshot.data!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Center(
-                  child: Icon(
-                    Icons.broken_image_outlined,
-                    color: violet,
-                    size: 32,
+                  );
+                },
+                child: Container(
+                  width: 100,
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: violet,
+                      width: 3,
+                    ),
                   ),
+                  padding: const EdgeInsets.all(4),
+                  clipBehavior: Clip.antiAlias,
+                  child: urlSnapshot.hasData
+                      ? previewStory['media_type'] == 'video'
+                          ? const Center(
+                              child: Icon(
+                                Icons.play_circle_outline,
+                                color: violet,
+                                size: 48,
+                              ),
+                            )
+                          : Image.network(
+                              urlSnapshot.data!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (
+                                context,
+                                error,
+                                stackTrace,
+                              ) =>
+                                  const Center(
+                                child: Icon(
+                                  Icons.broken_image_outlined,
+                                  color: violet,
+                                  size: 32,
+                                ),
+                              ),
+                            )
+                      : const Center(
+                          child: CircularProgressIndicator(
+                            color: violet,
+                          ),
+                        ),
                 ),
-              )
-        : const Center(
-            child: CircularProgressIndicator(
-              color: violet,
-            ),
-          ),
-  ),
-);
+              );
             },
           );
         },
