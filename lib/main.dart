@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -291,7 +292,7 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
-  @override
+@override  
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
@@ -2086,27 +2087,33 @@ class StoriesScreen extends StatefulWidget {
 }
 
 class _StoriesScreenState extends State<StoriesScreen> {
-
   static const Color violet = Color(0xFFA78BFA);
   static const Color cardColor = Color(0xFF24212D);
 
-  XFile? selectedMedia;
+  // Story playback controls
+  Timer? _storyTimer;
+PageController? _storyPageController;
+int _currentStoryIndex = 0;
+bool _isStoryPaused = false;
+int _timerStartedForIndex = -1;
+
+XFile? selectedMedia;
 bool isVideo = false;
 
-Future<List<Map<String, dynamic>>> _loadStories() async {
-  final supabase = Supabase.instance.client;
-  final user = supabase.auth.currentUser;
+  Future<List<Map<String, dynamic>>> _loadStories() async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
 
-  if (user == null) return [];
+    if (user == null) return [];
 
-  final stories = await supabase
-      .from('stories')
-      .select()
-      .gt('expires_at', DateTime.now().toUtc().toIso8601String())
-      .order('created_at', ascending: false);
+    final stories = await supabase
+        .from('stories')
+        .select()
+        .gt('expires_at', DateTime.now().toUtc().toIso8601String())
+        .order('created_at', ascending: false);
 
- return List<Map<String, dynamic>>.from(stories);
-}
+    return List<Map<String, dynamic>>.from(stories);
+  }
 
 Future<String> _getStoryUrl(String mediaPath) async {
   final supabase = Supabase.instance.client;
@@ -2233,6 +2240,26 @@ Future<void> _postStory() async {
         ),
       );
     }
+  }
+
+  // Automatically move to the next story after 5 seconds.
+  void _startStoryTimer(int storyCount) {
+    _storyTimer?.cancel();
+
+    if (_isStoryPaused || storyCount <= 0) return;
+
+    _storyTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted) return;
+
+      if (_currentStoryIndex < storyCount - 1) {
+        _storyPageController?.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        Navigator.of(context).maybePop();
+      }
+    });
   }
 
   @override
@@ -2547,34 +2574,42 @@ Future<void> _postStory() async {
 
                   if (!context.mounted) return;
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
+_storyTimer?.cancel();
+_storyPageController?.dispose();
+_storyPageController = PageController();
+_currentStoryIndex = 0;
+_isStoryPaused = false;
+
+Navigator.push(
+  context,
+  MaterialPageRoute(
                       builder: (context) => Scaffold(
                         backgroundColor: const Color(0xFF101016),
                         appBar: AppBar(
                           backgroundColor: const Color(0xFF101016),
                           foregroundColor: Colors.white,
                           title: const Text('Friendza Story'),
-                        ),
-                        body: PageView.builder(
-                          itemCount: personStories.length,
-                          onPageChanged: (pageIndex) async {
-                            final nextStory = personStories[pageIndex];
+),
+body: PageView.builder(
+  controller: _storyPageController,
+  itemCount: personStories.length,
+  onPageChanged: (pageIndex) async {
+    _storyTimer?.cancel();
+    _currentStoryIndex = pageIndex;
+    _timerStartedForIndex = -1;
 
-                            if (nextStory['user_id']?.toString() !=
-                                currentUserId) {
-                              try {
-                                await _recordStoryView(
-                                  nextStory['id'].toString(),
-                                );
-                              } catch (error) {
-                                debugPrint(
-                                  'Could not record story view: $error',
-                                );
-                              }
-                            }
-                          },
+    final nextStory = personStories[pageIndex];
+
+    if (nextStory['user_id']?.toString() != currentUserId) {
+      try {
+        await _recordStoryView(
+          nextStory['id'].toString(),
+        );
+      } catch (error) {
+        debugPrint('Could not record story view: $error');
+      }
+    }
+  },
                           itemBuilder: (context, pageIndex) {
                             final currentStory =
                                 personStories[pageIndex];
@@ -2584,8 +2619,22 @@ Future<void> _postStory() async {
                                 currentStory['media_path'].toString(),
                               ),
                               builder: (context, mediaSnapshot) {
-                                return Column(
-                                  children: [
+  if (mediaSnapshot.hasData &&
+      currentStory['media_type'] != 'video' &&
+      pageIndex == _currentStoryIndex) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          !_isStoryPaused &&
+          pageIndex == _currentStoryIndex &&
+          _timerStartedForIndex != pageIndex) {
+        _timerStartedForIndex = pageIndex;
+        _startStoryTimer(personStories.length);
+      }
+    });
+  }
+
+  return Column(
+    children: [
                                     Expanded(
                                       child: Center(
                                         child: !mediaSnapshot.hasData
